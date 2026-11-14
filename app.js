@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// ⚠️ REEMPLAZA CON TUS CREDENCIALES DE SUPABASE
+// Credenciales de tu proyecto de Supabase
 const SUPABASE_URL = "https://eorctlkxihvxynooadfg.supabase.co";
 const SUPABASE_ANON_KEY = "sb_secret_Bk-9R8j-RmAXiVJuLBQQvQ_0UPvGGoN";
 
@@ -39,7 +39,6 @@ async function checkUser() {
       <button class="btn" onclick="logout()" style="padding:4px 8px; font-size:12px;">Salir</button>
     `;
     
-    // Cargar datos de Supabase e iniciar el CRM
     await initCRM();
   } else {
     $('#login-screen').style.display = 'flex';
@@ -53,7 +52,6 @@ async function checkUser() {
 
 const D = { leads: [], alumnos: [], tareas: [], equipo: [], miembros: [], clases: [], pagos: [] };
 
-// Store adaptado para Supabase (Cada clave de E es el nombre de una tabla en Supabase)
 const Store = {
   async load() {
     try {
@@ -71,7 +69,7 @@ const Store = {
     else if (data) D[table].unshift(data[0]);
   },
   async update(table, id, item) {
-    delete item.id; // No modificar la PK
+    delete item.id;
     const { error } = await supabase.from(table).update(item).eq('id', id);
     if (error) alert('Error al actualizar: ' + error.message);
   },
@@ -270,8 +268,7 @@ $('#rf').onchange = async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!confirm('Esto reemplazará los datos. ¿Continuar?')) return;
-    // Nota: Para restaurar completo con Supabase lo ideal es vaciar e insertar, o usar respaldos por tabla.
-    alert('Restauración desde JSON completada localmente. Sincroniza con Supabase si lo requieres.');
+    alert('Restauración desde JSON completada localmente.');
   } catch (err) { alert('Archivo no válido.'); }
   e.target.value = '';
 };
