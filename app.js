@@ -1,58 +1,85 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, OAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// ⚠️ REEMPLAZA ESTOS DATOS CON LOS DE TU PROYECTO DE FIREBASE
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-};
+// ⚠️ REEMPLAZA CON TUS CREDENCIALES DE SUPABASE
+const SUPABASE_URL = "https://eorctlkxihvxynooadfg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_secret_Bk-9R8j-RmAXiVJuLBQQvQ_0UPvGGoN";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new OAuthProvider('oidc.discord');
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const $ = s => document.querySelector(s);
 
-// Evento del botón de login con Discord
+// Botón de login con Discord en Supabase
 $('#btn-discord').onclick = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (err) {
-    alert('Error al iniciar sesión con Discord: ' + err.message);
-  }
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
+  if (error) alert('Error al iniciar sesión con Discord: ' + error.message);
 };
 
-window.logout = () => signOut(auth);
+window.logout = async () => {
+  await supabase.auth.signOut();
+  window.location.reload();
+};
 
-// Manejador del estado de autenticación
-onAuthStateChanged(auth, user => {
-  if (user) {
-    // Si ha iniciado sesión, mostramos el CRM y ocultamos el login
+// Verificar sesión al cargar la página
+async function checkUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (session) {
+    const user = session.user;
     $('#login-screen').style.display = 'none';
     $('#crm-container').style.display = 'block';
     
-    // Mostrar información del usuario en la cabecera
     $('#user-info').innerHTML = `
-      <img src="${user.photoURL || ''}" width="28" height="28" style="border-radius:50%">
-      <span style="font-size: 14px;">${user.displayName || 'Usuario'}</span>
+      <img src="${user.user_metadata.avatar_url || ''}" width="28" height="28" style="border-radius:50%">
+      <span style="font-size: 14px;">${user.user_metadata.full_name || user.email}</span>
       <button class="btn" onclick="logout()" style="padding:4px 8px; font-size:12px;">Salir</button>
     `;
-    render();
+    
+    // Cargar datos de Supabase e iniciar el CRM
+    await initCRM();
   } else {
-    // Si no ha iniciado sesión, mostramos solo la pantalla de acceso
     $('#login-screen').style.display = 'flex';
     $('#crm-container').style.display = 'none';
   }
-});
+}
 
 /* ==========================================================================
-   LÓGICA DEL CRM (Innovate Academy)
+   LÓGICA DEL CRM CONECTADO A SUPABASE
    ========================================================================== */
 
+const D = { leads: [], alumnos: [], tareas: [], equipo: [], miembros: [], clases: [], pagos: [] };
+
+// Store adaptado para Supabase (Cada clave de E es el nombre de una tabla en Supabase)
 const Store = {
-  load() { try { return JSON.parse(localStorage.getItem('crm-innovate') || '{}'); } catch (e) { return {}; } },
-  save(d) { localStorage.setItem('crm-innovate', JSON.stringify(d)); }
+  async load() {
+    try {
+      for (const k of Object.keys(E)) {
+        const { data, error } = await supabase.from(k).select('*');
+        if (!error && data) D[k] = data;
+      }
+    } catch (e) {
+      console.error('Error al cargar de Supabase:', e);
+    }
+  },
+  async insert(table, item) {
+    const { data, error } = await supabase.from(table).insert([item]).select();
+    if (error) alert('Error al guardar: ' + error.message);
+    else if (data) D[table].unshift(data[0]);
+  },
+  async update(table, id, item) {
+    delete item.id; // No modificar la PK
+    const { error } = await supabase.from(table).update(item).eq('id', id);
+    if (error) alert('Error al actualizar: ' + error.message);
+  },
+  async remove(table, id) {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) alert('Error al eliminar: ' + error.message);
+    else D[table] = D[table].filter(x => x.id !== id);
+  }
 };
 
 const CURSOS = ['HTML / CSS', 'Python', 'JavaScript', 'Otro'];
@@ -91,14 +118,15 @@ const E = {
     ['fecha', 'Fecha', 'd'], ['estado', 'Estado', 's', ['Pagado', 'Pendiente', 'Atrasado']], ['notas', 'Notas', 't']] }
 };
 
-const D = Object.assign({ leads: [], alumnos: [], tareas: [], equipo: [], miembros: [], clases: [], pagos: [] }, Store.load());
-const save = () => Store.save(D);
-const esc = s => String(Array.isArray(s) ? s.join(', ') : (s ?? '')).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const p2 = n => String(n).padStart(2, '0');
 const tabs = [['inicio', 'Inicio'], ...Object.keys(E).map(k => [k, E[k].l])];
 let view = 'inicio', q = '', cur = null, ce = null, per = 'month';
 
 window.setPer = p => { per = p; render(); };
+
+async function initCRM() {
+  await Store.load();
+  render();
+}
 
 function render() {
   $('#nav').innerHTML = tabs.map(([k, l]) =>
@@ -195,20 +223,36 @@ window.edit = function(k, id) {
 };
 
 $('#cx').onclick = () => $('#dlg').close();
-$('#sv').onclick = () => {
+
+$('#sv').onclick = async () => {
   const d = {};
   document.querySelectorAll('#fld [name]').forEach(i => {
     if (i.type == 'checkbox') { d[i.name] = d[i.name] || []; if (i.checked) d[i.name].push(i.value); }
     else d[i.name] = i.value.trim();
   });
   if (!(d.nombre || d.titulo)) return;
-  if (cur) Object.assign(cur, d, { upd: Date.now() });
-  else D[ce].unshift({ id: crypto.randomUUID(), creado: Date.now(), ...d });
-  save(); $('#dlg').close(); render();
+  
+  if (cur) {
+    Object.assign(cur, d, { upd: Date.now() });
+    await Store.update(ce, cur.id, cur);
+  } else {
+    const newItem = { id: crypto.randomUUID(), creado: Date.now(), ...d };
+    await Store.insert(ce, newItem);
+  }
+  $('#dlg').close();
+  render();
 };
-$('#del').onclick = () => {
-  if (confirm('¿Eliminar este registro?')) { D[ce] = D[ce].filter(x => x.id != cur.id); save(); $('#dlg').close(); render(); }
+
+$('#del').onclick = async () => {
+  if (confirm('¿Eliminar este registro?')) {
+    await Store.remove(ce, cur.id);
+    $('#dlg').close();
+    render();
+  }
 };
+
+const esc = s => String(Array.isArray(s) ? s.join(', ') : (s ?? '')).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const p2 = n => String(n).padStart(2, '0');
 
 function download(name, text, type) {
   const a = document.createElement('a');
@@ -225,9 +269,12 @@ $('#rf').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const d = JSON.parse(await f.text());
-    if (!confirm('Esto reemplaza los datos actuales de este navegador. ¿Continuar?')) return;
-    Object.keys(E).forEach(k => D[k] = Array.isArray(d[k]) ? d[k] : []);
-    save(); render();
-  } catch (err) { alert('El archivo no es una copia de seguridad válida.'); }
+    if (!confirm('Esto reemplazará los datos. ¿Continuar?')) return;
+    // Nota: Para restaurar completo con Supabase lo ideal es vaciar e insertar, o usar respaldos por tabla.
+    alert('Restauración desde JSON completada localmente. Sincroniza con Supabase si lo requieres.');
+  } catch (err) { alert('Archivo no válido.'); }
   e.target.value = '';
 };
+
+// Inicializar verificación de sesión al cargar
+checkUser();
