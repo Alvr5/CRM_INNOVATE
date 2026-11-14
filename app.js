@@ -8,17 +8,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const $ = s => document.querySelector(s);
 
-// Botón de login con Discord en Supabase
 $('#btn-discord').onclick = async () => {
+  // Esto toma exactamente la URL de la página actual donde está el usuario (incluyendo carpetas y subrutas)
+  const currentRedirect = window.location.href.split('#')[0]; 
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      redirectTo: window.location.origin
+      redirectTo: currentRedirect
     }
   });
   if (error) alert('Error al iniciar sesión con Discord: ' + error.message);
 };
-
 window.logout = async () => {
   await supabase.auth.signOut();
   window.location.reload();
