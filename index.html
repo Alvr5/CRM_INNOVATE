@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM · Innovate Academy</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>CRM · Innovate Academy</h1>
+  <nav id="nav"></nav>
+  <button class="btn" id="bk">Copia de seguridad</button>
+  <button class="btn" id="rs">Restaurar</button>
+  <input type="file" id="rf" accept=".json" hidden>
+</header>
+<main id="app"></main>
+<dialog id="dlg">
+  <form id="frm" onsubmit="return false">
+    <div id="fld"></div>
+    <div class="row">
+      <button class="btn er" id="del" type="button">Eliminar</button>
+      <button class="btn" id="cx" type="button">Cancelar</button>
+      <button class="btn pri" id="sv" type="button">Guardar</button>
+    </div>
+  </form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>
