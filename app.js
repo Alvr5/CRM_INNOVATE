@@ -1,6 +1,55 @@
-/* CRM Innovate Academy · versión independiente.
-   Los datos se guardan en este navegador (localStorage). Para compartirlos
-   entre el equipo, sustituye el objeto Store por llamadas a tu base de datos. */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, OAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+// ⚠️ REEMPLAZA ESTOS DATOS CON LOS DE TU PROYECTO DE FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new OAuthProvider('oidc.discord');
+
+const $ = s => document.querySelector(s);
+
+// Evento del botón de login con Discord
+$('#btn-discord').onclick = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    alert('Error al iniciar sesión con Discord: ' + err.message);
+  }
+};
+
+window.logout = () => signOut(auth);
+
+// Manejador del estado de autenticación
+onAuthStateChanged(auth, user => {
+  if (user) {
+    // Si ha iniciado sesión, mostramos el CRM y ocultamos el login
+    $('#login-screen').style.display = 'none';
+    $('#crm-container').style.display = 'block';
+    
+    // Mostrar información del usuario en la cabecera
+    $('#user-info').innerHTML = `
+      <img src="${user.photoURL || ''}" width="28" height="28" style="border-radius:50%">
+      <span style="font-size: 14px;">${user.displayName || 'Usuario'}</span>
+      <button class="btn" onclick="logout()" style="padding:4px 8px; font-size:12px;">Salir</button>
+    `;
+    render();
+  } else {
+    // Si no ha iniciado sesión, mostramos solo la pantalla de acceso
+    $('#login-screen').style.display = 'flex';
+    $('#crm-container').style.display = 'none';
+  }
+});
+
+/* ==========================================================================
+   LÓGICA DEL CRM (Innovate Academy)
+   ========================================================================== */
+
 const Store = {
   load() { try { return JSON.parse(localStorage.getItem('crm-innovate') || '{}'); } catch (e) { return {}; } },
   save(d) { localStorage.setItem('crm-innovate', JSON.stringify(d)); }
@@ -44,11 +93,12 @@ const E = {
 
 const D = Object.assign({ leads: [], alumnos: [], tareas: [], equipo: [], miembros: [], clases: [], pagos: [] }, Store.load());
 const save = () => Store.save(D);
-const $ = s => document.querySelector(s);
 const esc = s => String(Array.isArray(s) ? s.join(', ') : (s ?? '')).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const p2 = n => String(n).padStart(2, '0');
 const tabs = [['inicio', 'Inicio'], ...Object.keys(E).map(k => [k, E[k].l])];
 let view = 'inicio', q = '', cur = null, ce = null, per = 'month';
+
+window.setPer = p => { per = p; render(); };
 
 function render() {
   $('#nav').innerHTML = tabs.map(([k, l]) =>
@@ -57,7 +107,8 @@ function render() {
   const s = $('#q');
   if (s) s.oninput = e => { q = e.target.value; const p = e.target.selectionStart; render(); const n = $('#q'); n.focus(); n.setSelectionRange(p, p); };
 }
-function go(v) { view = v; q = ''; render(); }
+
+window.go = function(v) { view = v; q = ''; render(); };
 const cnt = (a, k, v) => a.filter(x => x[k] == v).length;
 const match = x => !q || JSON.stringify(Object.values(x)).toLowerCase().includes(q.toLowerCase());
 
@@ -98,7 +149,6 @@ function list(k) {
     '</table></div>' + (R.length ? '' : '<p class="mu">Todavía no hay registros.</p>');
 }
 
-/* Gráfico de ingresos (barras SVG) calculado desde la pestaña Pagos */
 function bucket(s) {
   const y = s.slice(0, 4), m = +s.slice(5, 7);
   return per == 'day' ? s : per == 'month' ? s.slice(0, 7) : per == 'quarter' ? y + '-T' + Math.ceil(m / 3) : y;
@@ -118,15 +168,14 @@ function chart() {
   const tot = V.reduce((a, x) => a + x.v, 0), cn = V.reduce((a, x) => a + x.n, 0);
   const svg = K.map((k, i) => {
     const h = V[i].v / mx * (H - 40);
-    return `<rect x="${i * bw + bw * .12}" y="${H - 25 - h}" width="${bw * .76}" height="${h}" rx="3" fill="var(--ac)"><title>${k}: ${num.format(V[i].v)} (${V[i].n} pagos)</title></rect>` +
+    return `<rect x="${i * bw + bw * 0.12}" y="${H - 25 - h}" width="${bw * 0.76}" height="${h}" rx="3" fill="var(--ac)"><title>${k}: ${num.format(V[i].v)} (${V[i].n} pagos)</title></rect>` +
       (K.length <= 14 || i % Math.ceil(K.length / 10) == 0 ? `<text x="${i * bw + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="var(--mu)">${per == 'day' ? k.slice(5) : k}</text>` : '');
   }).join('');
-  return `<div class="card" style="margin-bottom:14px"><div class="bar" style="margin:0 0 10px"><b style="margin-right:auto">Ingresos (pagos con estado Pagado)</b>${[['day', 'Diario'], ['month', 'Mensual'], ['quarter', 'Trimestral'], ['year', 'Anual']].map(([a, b]) => `<button class="btn ${per == a ? 'pri' : ''}" onclick="per='${a}';render()">${b}</button>`).join('')}</div>
+  return `<div class="card" style="margin-bottom:14px"><div class="bar" style="margin:0 0 10px"><b style="margin-right:auto">Ingresos (pagos con estado Pagado)</b>${[['day', 'Diario'], ['month', 'Mensual'], ['quarter', 'Trimestral'], ['year', 'Anual']].map(([a, b]) => `<button class="btn ${per == a ? 'pri' : ''}" onclick="setPer('${a}')">${b}</button>`).join('')}</div>
   <div class="grid"><div class="card kpi"><b>${num.format(tot)}</b><span class="mu">Total del periodo</span></div><div class="card kpi"><b>${cn}</b><span class="mu">Pagos</span></div><div class="card kpi"><b>${num.format(cn ? tot / cn : 0)}</b><span class="mu">Ticket promedio</span></div></div>
   <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ingresos por periodo">${svg}</svg></div>`;
 }
 
-/* Formulario */
 function field([n, l, t, o], v) {
   const val = v[n]; let x;
   if (t == 'r') { o = ['', ...D.miembros.map(m => m.nombre)]; t = 's'; }
@@ -136,13 +185,15 @@ function field([n, l, t, o], v) {
   else x = `<input name="${n}" type="${t == 'd' ? 'date' : 'text'}" value="${esc(val)}">`;
   return `<label>${l}</label>${x}`;
 }
-function edit(k, id) {
+
+window.edit = function(k, id) {
   ce = k; cur = id ? D[k].find(x => x.id == id) : null;
   const e = E[k], v = cur || {};
   $('#fld').innerHTML = `<b>${cur ? 'Editar' : 'Nuevo'} · ${e.n}</b>` + e.f.map(f => field(f, v)).join('');
   $('#del').style.display = cur ? '' : 'none';
   $('#dlg').showModal();
-}
+};
+
 $('#cx').onclick = () => $('#dlg').close();
 $('#sv').onclick = () => {
   const d = {};
@@ -159,16 +210,15 @@ $('#del').onclick = () => {
   if (confirm('¿Eliminar este registro?')) { D[ce] = D[ce].filter(x => x.id != cur.id); save(); $('#dlg').close(); render(); }
 };
 
-/* Exportar, copia de seguridad y restauración */
 function download(name, text, type) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type }));
   a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
-function csv(k) {
+window.csv = function(k) {
   const f = E[k].f, rows = [f.map(x => x[1]), ...D[k].map(x => f.map(y => x[y[0]] ?? ''))];
   download(k + '.csv', '\ufeff' + rows.map(r => r.map(c => '"' + String(Array.isArray(c) ? c.join(', ') : c).replace(/"/g, '""') + '"').join(',')).join('\n'), 'text/csv');
-}
+};
 $('#bk').onclick = () => download('crm-innovate-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(D, null, 2), 'application/json');
 $('#rs').onclick = () => $('#rf').click();
 $('#rf').onchange = async e => {
@@ -181,5 +231,3 @@ $('#rf').onchange = async e => {
   } catch (err) { alert('El archivo no es una copia de seguridad válida.'); }
   e.target.value = '';
 };
-
-render();
