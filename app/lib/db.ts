@@ -731,7 +731,19 @@ export const db = {
       const userPermissions: string[] = [];
       const permissions = role.permissions || [];
       for (const permId of permissions) {
-        const perm = await db.permissions.getById(permId);
+        let perm = null;
+        // Check if permId is a UUID (Supabase ID format)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(permId);
+        if (isUuid) {
+          perm = await db.permissions.getById(permId);
+        } else {
+          // Legacy format: "resource:action" - query by resource and action
+          const [res, act] = permId.split(':');
+          if (res && act) {
+            const { data } = await supabase.from('permissions').select('*').eq('resource', res).eq('action', act).single();
+            if (data) perm = fromSnakeCase(data);
+          }
+        }
         userPermissions.push(perm ? `${perm.resource}:${perm.action}` : permId);
       }
       return userPermissions.includes(`${resource}:${action}`) || userPermissions.includes(`${resource}:manage`);
