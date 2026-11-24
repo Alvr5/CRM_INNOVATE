@@ -21,7 +21,7 @@ export async function clientAction({ request }: { request: Request }) {
     notes: formData.get('notes') as string,
   };
 
-  const contact = db.contacts.create(data);
+  const contact = await db.contacts.create(data);
   return redirect(`/contacts/${contact.id}`);
 }
 

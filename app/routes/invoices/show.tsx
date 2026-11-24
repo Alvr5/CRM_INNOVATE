@@ -3,10 +3,10 @@ import { db } from "~/lib/db";
 import type { Invoice, Contact, Company } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const invoice = db.invoices.getById(params.id);
+  const invoice = await db.invoices.getById(params.id);
   if (!invoice) throw new Response("Factura no encontrada", { status: 404 });
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
   return { invoice, contacts, companies };
 }
 

@@ -83,9 +83,9 @@ export default function UsersIndex() {
                       )}
                       {hasPermission('users', 'delete') && (
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm('¿Estás seguro de eliminar este usuario?')) {
-                              db.users.delete(user.id);
+                              await db.users.delete(user.id);
                               window.location.reload();
                             }
                           }}

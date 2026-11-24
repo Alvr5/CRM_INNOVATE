@@ -35,7 +35,7 @@ export async function clientAction({ request, params }: { request: Request; para
     country: formData.get('country') as string,
   };
 
-  db.leads.update(params.id!, data);
+  await db.leads.update(params.id!, data);
   return redirect(`/leads/${params.id}`);
 }
 
@@ -45,8 +45,8 @@ export default function EditLead() {
   const { hasPermission } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = () => {
-    db.leads.delete(params.id!);
+  const handleDelete = async () => {
+    await db.leads.delete(params.id!);
     window.location.href = '/leads';
   };
 

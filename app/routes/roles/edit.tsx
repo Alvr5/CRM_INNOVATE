@@ -41,7 +41,7 @@ export async function clientAction({ request, params }: { request: Request; para
     });
   });
 
-  db.roles.update(params.id!, { name, description, permissions });
+  await db.roles.update(params.id!, { name, description, permissions });
   return redirect(`/roles`);
 }
 
@@ -61,8 +61,8 @@ export default function EditRole() {
 
   if (!isAdmin()) return null;
 
-  const handleDelete = () => {
-    db.roles.delete(params.id!);
+  const handleDelete = async () => {
+    await db.roles.delete(params.id!);
     window.location.href = '/roles';
   };
 

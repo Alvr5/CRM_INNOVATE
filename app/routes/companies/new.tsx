@@ -15,7 +15,7 @@ export async function clientAction({ request }: { request: Request }) {
     notes: formData.get('notes') as string,
   };
 
-  const company = db.companies.create(data);
+  const company = await db.companies.create(data);
   return redirect(`/companies/${company.id}`);
 }
 

@@ -3,8 +3,10 @@ import { db } from "~/lib/db";
 import type { TeamMember, User } from "~/lib/db";
 
 export async function clientLoader() {
-  const teamMembers = db.teamMembers.getAll();
-  const users = db.users.getAll();
+  const [teamMembers, users] = await Promise.all([
+    db.teamMembers.getAll(),
+    db.users.getAll(),
+  ]);
   return { teamMembers, users };
 }
 

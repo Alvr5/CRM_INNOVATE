@@ -34,7 +34,7 @@ export async function clientAction({ request }: { request: Request }) {
   const newStatus = formData.get('status') as typeof LEAD_STAGES[0]['key'];
 
   if (leadId && newStatus) {
-    db.leads.update(leadId, { status: newStatus });
+    await db.leads.update(leadId, { status: newStatus });
   }
   return null;
 }
@@ -233,11 +233,11 @@ function ConvertLeadModal({ lead, onClose, onConvert }: { lead: any; onClose: ()
   const [dealValue, setDealValue] = useState(lead.estimatedValue);
   const [dealTitle, setDealTitle] = useState(`${lead.firstName} ${lead.lastName} - ${lead.company || 'Sin empresa'}`);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    db.leads.update(lead.id, { status: 'converted', convertedAt: new Date().toISOString() });
+    await db.leads.update(lead.id, { status: 'converted', convertedAt: new Date().toISOString() });
     if (createContact) {
-      const contact = db.contacts.create({
+      const contact = await db.contacts.create({
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
@@ -249,9 +249,9 @@ function ConvertLeadModal({ lead, onClose, onConvert }: { lead: any; onClose: ()
         country: lead.country,
         notes: `Convertido desde lead: ${lead.notes}`,
       });
-      db.leads.update(lead.id, { convertedToContactId: contact.id });
+      await db.leads.update(lead.id, { convertedToContactId: contact.id });
       if (createDeal) {
-        const deal = db.deals.create({
+        const deal = await db.deals.create({
           title: dealTitle,
           value: dealValue,
           stage: 'qualification',
@@ -261,7 +261,7 @@ function ConvertLeadModal({ lead, onClose, onConvert }: { lead: any; onClose: ()
           expectedCloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           description: `Oportunidad creada al convertir lead: ${lead.notes}`,
         });
-        db.leads.update(lead.id, { convertedToDealId: deal.id });
+        await db.leads.update(lead.id, { convertedToDealId: deal.id });
       }
     }
     onConvert();

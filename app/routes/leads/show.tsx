@@ -67,8 +67,8 @@ export default function LeadShow() {
     lost: 'bg-red-100 text-red-700',
   };
 
-  const handleDelete = () => {
-    db.leads.delete(lead.id);
+  const handleDelete = async () => {
+    await db.leads.delete(lead.id);
     window.location.href = '/leads';
   };
 

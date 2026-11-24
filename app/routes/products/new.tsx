@@ -14,7 +14,7 @@ export async function clientAction({ request }: { request: Request }) {
     type: formData.get("type") as 'product' | 'service',
     isActive: formData.get("isActive") === "on",
   };
-  db.products.create(data);
+  await db.products.create(data);
   return redirect("/products");
 }
 

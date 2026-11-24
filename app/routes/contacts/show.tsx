@@ -52,8 +52,8 @@ export default function ContactShow() {
     note: { icon: <DocumentIcon />, color: 'text-gray-600 bg-gray-100' },
   };
 
-  const handleDelete = () => {
-    db.contacts.delete(contact.id);
+  const handleDelete = async () => {
+    await db.contacts.delete(contact.id);
     window.location.href = '/contacts';
   };
 

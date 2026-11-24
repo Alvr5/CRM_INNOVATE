@@ -18,7 +18,7 @@ export async function clientAction({ request }: { request: Request }) {
     isActive: formData.get('isActive') === 'on',
   };
 
-  db.users.create(data);
+  await db.users.create(data);
   return redirect('/users');
 }
 

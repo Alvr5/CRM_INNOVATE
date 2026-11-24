@@ -114,9 +114,9 @@ export default function ActivitiesIndex() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link to={`/activities/${activity.id}/edit`} className="text-blue-600 hover:text-blue-900 mr-3">Editar</Link>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (confirm('¿Estás seguro de eliminar esta actividad?')) {
-                            db.activities.delete(activity.id);
+                            await db.activities.delete(activity.id);
                             window.location.reload();
                           }
                         }}

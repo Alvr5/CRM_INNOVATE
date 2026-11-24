@@ -43,8 +43,8 @@ export default function DealShow() {
     'closed-lost': 'bg-red-100 text-red-700',
   };
 
-  const handleDelete = () => {
-    db.deals.delete(deal.id);
+  const handleDelete = async () => {
+    await db.deals.delete(deal.id);
     window.location.href = '/deals';
   };
 

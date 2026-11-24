@@ -5,7 +5,7 @@ import { useAuth } from "~/context/AuthContext";
 import type { Setting } from "~/lib/db";
 
 export async function clientLoader() {
-  const settings = db.settings.getAll();
+  const settings = await db.settings.getAll();
   return { settings };
 }
 
@@ -28,7 +28,7 @@ export default function SettingsIndex() {
   };
 
   const handleSave = async (setting: Setting) => {
-    db.settings.update(setting.id, { value: editValue });
+    await db.settings.update(setting.id, { value: editValue });
     setEditingId(null);
   };
 

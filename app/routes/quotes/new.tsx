@@ -4,14 +4,14 @@ import { useState } from "react";
 import type { Quote, Product, Contact, Company } from "~/lib/db";
 
 export async function clientLoader() {
-  const products = db.products.getAll().filter(p => p.isActive);
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
-  const settings = db.settings.getAll();
+  const products = (await db.products.getAll()).filter(p => p.isActive);
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
+  const settings = await db.settings.getAll();
   const quotePrefix = settings.find(s => s.key === 'quote_prefix')?.value || 'PRES-';
   const defaultCurrency = settings.find(s => s.key === 'default_currency')?.value || 'EUR';
   const defaultTaxRate = parseFloat(settings.find(s => s.key === 'tax_rate')?.value || '21');
-  const quoteCount = db.quotes.getAll().length + 1;
+  const quoteCount = (await db.quotes.getAll()).length + 1;
   return { products, contacts, companies, quotePrefix, defaultCurrency, defaultTaxRate, quoteCount };
 }
 
@@ -54,7 +54,7 @@ export async function clientAction({ request }: { request: Request }) {
     items,
   };
 
-  db.quotes.create(data);
+  await db.quotes.create(data);
   return redirect("/quotes");
 }
 

@@ -156,6 +156,7 @@ export default function Layout() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [isAdminState, setIsAdminState] = useState(false);
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
   const location = useLocation();
   const { user, logout, hasPermission, isAdmin, loading } = useAuth();
 
@@ -165,25 +166,47 @@ export default function Layout() {
 
   useEffect(() => {
     if (user) {
-      isAdmin().then(setIsAdminState);
-      const resources = ['leads', 'contacts', 'companies', 'deals', 'activities', 'users', 'roles', 'settings', 'products', 'invoices', 'quotes', 'teamMembers'];
-      const actions = ['read', 'create', 'update', 'delete'];
-      const checks = resources.flatMap(r => actions.map(a => hasPermission(r, a)));
-      Promise.all(checks).then(results => {
-        const perms = new Set<string>();
-        let i = 0;
-        resources.forEach(r => {
-          actions.forEach(a => {
-            if (results[i]) perms.add(`${r}:${a}`);
-            i++;
-          });
-        });
-        setPermissions(perms);
-      });
+      let cancelled = false;
+      const loadPermissions = async () => {
+        try {
+          const admin = await isAdmin();
+          if (!cancelled) setIsAdminState(admin);
+          
+          const resources = ['leads', 'contacts', 'companies', 'deals', 'activities', 'users', 'roles', 'settings', 'products', 'invoices', 'quotes', 'teamMembers'];
+          const actions = ['read', 'create', 'update', 'delete'];
+          const checks = resources.flatMap(r => actions.map(a => hasPermission(r, a)));
+          const results = await Promise.all(checks);
+          
+          if (!cancelled) {
+            const perms = new Set<string>();
+            let i = 0;
+            resources.forEach(r => {
+              actions.forEach(a => {
+                if (results[i]) perms.add(`${r}:${a}`);
+                i++;
+              });
+            });
+            setPermissions(perms);
+            setLoadingPermissions(false);
+          }
+        } catch (error) {
+          console.error('Error loading permissions:', error);
+          if (!cancelled) {
+            setLoadingPermissions(false);
+          }
+        }
+      };
+      
+      loadPermissions();
+      return () => { cancelled = true; };
+    } else {
+      setPermissions(new Set());
+      setIsAdminState(false);
+      setLoadingPermissions(false);
     }
-  }, [user]);
+  }, [user, hasPermission, isAdmin]);
 
-  if (loading) {
+  if (loading || loadingPermissions) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>

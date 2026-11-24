@@ -3,9 +3,9 @@ import { db } from "~/lib/db";
 import type { Invoice } from "~/lib/db";
 
 export async function clientLoader() {
-  const invoices = db.invoices.getAll();
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
+  const invoices = await db.invoices.getAll();
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
   return { invoices, contacts, companies };
 }
 

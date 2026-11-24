@@ -36,7 +36,7 @@ export async function clientAction({ request }: { request: Request }) {
     });
   });
 
-  db.roles.create({ name, description, permissions, isSystem: false });
+  await db.roles.create({ name, description, permissions, isSystem: false });
   return redirect(`/roles`);
 }
 

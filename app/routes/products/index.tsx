@@ -3,7 +3,7 @@ import { db } from "~/lib/db";
 import type { Product } from "~/lib/db";
 
 export async function clientLoader() {
-  const products = db.products.getAll();
+  const products = await db.products.getAll();
   return { products };
 }
 

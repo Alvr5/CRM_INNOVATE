@@ -76,9 +76,9 @@ export default function ContactsIndex() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link to={`/contacts/${contact.id}/edit`} className="text-blue-600 hover:text-blue-900 mr-3">Editar</Link>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (confirm('¿Estás seguro de eliminar este contacto?')) {
-                            db.contacts.delete(contact.id);
+                            await db.contacts.delete(contact.id);
                             window.location.reload();
                           }
                         }}

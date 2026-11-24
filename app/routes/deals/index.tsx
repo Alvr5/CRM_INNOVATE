@@ -34,7 +34,7 @@ export async function clientAction({ request }: { request: Request }) {
   const newStage = formData.get('stage') as typeof STAGES[0]['key'];
 
   if (dealId && newStage) {
-    db.deals.update(dealId, { stage: newStage });
+    await db.deals.update(dealId, { stage: newStage });
   }
   return null;
 }

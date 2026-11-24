@@ -30,7 +30,7 @@ export async function clientAction({ request }: { request: Request }) {
     country: formData.get('country') as string,
   };
 
-  const lead = db.leads.create(data);
+  const lead = await db.leads.create(data);
   return redirect(`/leads/${lead.id}`);
 }
 

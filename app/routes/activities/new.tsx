@@ -29,7 +29,7 @@ export async function clientAction({ request }: { request: Request }) {
     dealId: formData.get('dealId') as string || undefined,
   };
 
-  const activity = db.activities.create(data);
+  const activity = await db.activities.create(data);
   return redirect(`/activities`);
 }
 

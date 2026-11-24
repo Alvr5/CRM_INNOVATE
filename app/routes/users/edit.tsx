@@ -27,7 +27,7 @@ export async function clientAction({ request, params }: { request: Request; para
     data.passwordHash = `hashed_${password}`;
   }
 
-  db.users.update(params.id!, data);
+  await db.users.update(params.id!, data);
   return redirect(`/users/${params.id}`);
 }
 
@@ -44,8 +44,8 @@ export default function EditUser() {
 
   if (!isAdmin()) return null;
 
-  const handleDelete = () => {
-    db.users.delete(params.id!);
+  const handleDelete = async () => {
+    await db.users.delete(params.id!);
     window.location.href = '/users';
   };
 

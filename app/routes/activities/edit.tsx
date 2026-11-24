@@ -28,7 +28,7 @@ export async function clientAction({ request, params }: { request: Request; para
     dealId: formData.get('dealId') as string || undefined,
   };
 
-  db.activities.update(params.id!, data);
+  await db.activities.update(params.id!, data);
   return redirect(`/activities`);
 }
 
@@ -37,8 +37,8 @@ export default function EditActivity() {
   const params = useParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = () => {
-    db.activities.delete(params.id!);
+  const handleDelete = async () => {
+    await db.activities.delete(params.id!);
     window.location.href = '/activities';
   };
 

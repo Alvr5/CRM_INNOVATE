@@ -4,12 +4,12 @@ import { useState } from "react";
 import type { Quote, Product, Contact, Company } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const quote = db.quotes.getById(params.id);
+  const quote = await db.quotes.getById(params.id);
   if (!quote) throw new Response("Presupuesto no encontrado", { status: 404 });
-  const products = db.products.getAll().filter(p => p.isActive);
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
-  const settings = db.settings.getAll();
+  const products = (await db.products.getAll()).filter(p => p.isActive);
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
+  const settings = await db.settings.getAll();
   const defaultTaxRate = parseFloat(settings.find(s => s.key === 'tax_rate')?.value || '21');
   return { quote, products, contacts, companies, defaultTaxRate };
 }
@@ -53,7 +53,7 @@ export async function clientAction({ request, params }: { request: Request; para
     items,
   };
 
-  db.quotes.update(params.id, data);
+  await db.quotes.update(params.id, data);
   return redirect("/quotes");
 }
 

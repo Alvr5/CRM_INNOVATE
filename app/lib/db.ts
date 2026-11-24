@@ -254,7 +254,8 @@ function toSnakeCase<T extends Record<string, any>>(obj: T): Record<string, any>
   const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value === undefined) continue;
-    result[camelToSnake(key)] = value;
+    // Convert empty strings to null (for UUID foreign keys and optional fields)
+    result[camelToSnake(key)] = value === '' ? null : value;
   }
   return result;
 }
@@ -286,7 +287,7 @@ function createCrud<T extends { id: string }>(entity: keyof EntityMap) {
     },
     create: async (data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> => {
       const now = new Date().toISOString();
-      const newItem = { ...data, id: generateId(), createdAt: now, updatedAt: now };
+      const newItem = { ...data, createdAt: now, updatedAt: now };
       const { data: result, error } = await supabase.from(table).insert(toSnakeCase(newItem) as any).select().single();
       if (error) throw error;
       return fromSnakeCase<T>(result);
@@ -507,132 +508,182 @@ export const db = {
   seed: async () => {
     if (typeof window === 'undefined') return;
 
-    const { data: existing } = await supabase.from('permissions').select('id').limit(1);
-    if (existing && existing.length > 0) return;
+    try {
+      // Clear old localStorage seed flag so we always check Supabase
+      localStorage.removeItem('crm_seeded');
 
-    const createdPermissions: Permission[] = [];
-    for (const p of DEFAULT_PERMISSIONS) {
-      const { data } = await supabase.from('permissions').insert(toSnakeCase(p) as any).select().single();
-      if (data) createdPermissions.push(fromSnakeCase(data));
-    }
-
-    const createdRoles: Role[] = [];
-    for (const r of DEFAULT_ROLES) {
-      const rolePermissions = r.permissions.map(permName => {
-        const perm = createdPermissions.find(p => `${p.resource}:${p.action}` === permName);
-        return perm ? perm.id : permName;
-      });
-      const { data } = await supabase.from('roles').insert(toSnakeCase({ ...r, permissions: rolePermissions }) as any).select().single();
-      if (data) createdRoles.push(fromSnakeCase(data));
-    }
-
-    const adminRole = createdRoles.find(r => r.name === 'Administrador');
-    const managerRole = createdRoles.find(r => r.name === 'Gerente de Ventas');
-    const sellerRole = createdRoles.find(r => r.name === 'Vendedor');
-
-    const createdUsers: User[] = [];
-    DEFAULT_USERS.forEach((u, i) => {
-      let roleId = sellerRole?.id ?? '';
-      if (i === 0) roleId = adminRole?.id ?? '';
-      if (i === 2) roleId = managerRole?.id ?? '';
-      createdUsers.push({ ...u, roleId } as User);
-    });
-
-    for (const u of createdUsers) {
-      await supabase.from('users').insert(toSnakeCase(u) as any).select().single();
-    }
-
-    for (const [i, lead] of DEFAULT_LEADS.entries()) {
-      await supabase.from('leads').insert(toSnakeCase({ ...lead, assignedTo: createdUsers[i % createdUsers.length]?.id ?? '' }) as any).select().single();
-    }
-
-    const companies = [
-      { name: 'TechCorp Solutions', industry: 'Technology', size: '100-500', website: 'https://techcorp.com', phone: '+1-555-0100', address: '100 Tech Blvd', city: 'San Francisco', country: 'USA', notes: 'Leading tech solutions provider' },
-      { name: 'Global Manufacturing Inc', industry: 'Manufacturing', size: '1000+', website: 'https://globalmfg.com', phone: '+1-555-0200', address: '200 Industrial Way', city: 'Chicago', country: 'USA', notes: 'Global manufacturing leader' },
-      { name: 'Creative Agency Co', industry: 'Marketing', size: '10-50', website: 'https://creativeagency.com', phone: '+1-555-0300', address: '300 Design St', city: 'New York', country: 'USA', notes: 'Award-winning creative agency' },
-    ];
-
-    const contacts = [
-      { firstName: 'John', lastName: 'Smith', email: 'john.smith@techcorp.com', phone: '+1-555-1001', companyId: '', position: 'CTO', address: '100 Tech Blvd', city: 'San Francisco', country: 'USA', notes: 'Key decision maker' },
-      { firstName: 'Sarah', lastName: 'Johnson', email: 'sarah.j@globalmfg.com', phone: '+1-555-1002', companyId: '', position: 'VP Operations', address: '200 Industrial Way', city: 'Chicago', country: 'USA', notes: 'Operations lead' },
-      { firstName: 'Mike', lastName: 'Davis', email: 'mike.davis@creativeagency.com', phone: '+1-555-1003', companyId: '', position: 'Creative Director', address: '300 Design St', city: 'New York', country: 'USA', notes: 'Creative lead' },
-    ];
-
-    const deals = [
-      { title: 'Enterprise License Renewal', value: 50000, stage: 'proposal' as const, probability: 70, contactId: '', companyId: '', expectedCloseDate: '2026-12-15', description: 'Annual enterprise license renewal for TechCorp' },
-      { title: 'New CRM Implementation', value: 75000, stage: 'qualification' as const, probability: 40, contactId: '', companyId: '', expectedCloseDate: '2026-11-30', description: 'Full CRM implementation for Global Manufacturing' },
-      { title: 'Website Redesign Project', value: 25000, stage: 'negotiation' as const, probability: 80, contactId: '', companyId: '', expectedCloseDate: '2026-12-01', description: 'Complete website redesign for Creative Agency' },
-    ];
-
-    const activities = [
-      { type: 'meeting' as const, subject: 'Discovery call with TechCorp', description: 'Initial discovery meeting', dueDate: '2026-11-25', completed: false, contactId: '', companyId: '', dealId: '' },
-      { type: 'call' as const, subject: 'Follow up with Global Manufacturing', description: 'Discuss implementation timeline', dueDate: '2026-11-22', completed: true, contactId: '', companyId: '', dealId: '' },
-      { type: 'email' as const, subject: 'Proposal sent to Creative Agency', description: 'Sent website redesign proposal', dueDate: '2026-11-20', completed: true, contactId: '', companyId: '', dealId: '' },
-    ];
-
-    const createdCompanies: Company[] = [];
-    for (const c of companies) {
-      const { data } = await supabase.from('companies').insert(toSnakeCase(c) as any).select().single();
-      if (data) createdCompanies.push(fromSnakeCase(data));
-    }
-
-    const createdContacts: Contact[] = [];
-    for (const [i, c] of contacts.entries()) {
-      const { data } = await supabase.from('contacts').insert(toSnakeCase({ ...c, companyId: createdCompanies[i]?.id ?? '' }) as any).select().single();
-      if (data) createdContacts.push(fromSnakeCase(data));
-    }
-
-    const createdDeals: Deal[] = [];
-    for (const [i, d] of deals.entries()) {
-      const { data } = await supabase.from('deals').insert(toSnakeCase({ ...d, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '' }) as any).select().single();
-      if (data) createdDeals.push(fromSnakeCase(data));
-    }
-
-    for (const [i, a] of activities.entries()) {
-      await supabase.from('activities').insert(toSnakeCase({ ...a, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '', dealId: createdDeals[i]?.id ?? '' }) as any).select().single();
-    }
-
-    const settings = [
-      { key: 'company_name', value: 'CRM Innovate', category: 'general' as const, description: 'Nombre de la empresa' },
-      { key: 'company_email', value: 'info@crminnovate.com', category: 'general' as const, description: 'Email de la empresa' },
-      { key: 'company_phone', value: '+34-900-123-456', category: 'general' as const, description: 'Teléfono de la empresa' },
-      { key: 'company_address', value: 'Calle Gran Vía 1, 28013 Madrid', category: 'general' as const, description: 'Dirección de la empresa' },
-      { key: 'default_currency', value: 'EUR', category: 'billing' as const, description: 'Moneda por defecto' },
-      { key: 'tax_rate', value: '21', category: 'billing' as const, description: 'Tipo de IVA por defecto (%)' },
-      { key: 'invoice_prefix', value: 'FAC-', category: 'billing' as const, description: 'Prefijo para facturas' },
-      { key: 'quote_prefix', value: 'PRES-', category: 'billing' as const, description: 'Prefijo para presupuestos' },
-      { key: 'email_notifications', value: 'true', category: 'email' as const, description: 'Activar notificaciones por email' },
-      { key: 'theme', value: 'light', category: 'appearance' as const, description: 'Tema de la interfaz' },
-    ];
-    for (const s of settings) {
-      await supabase.from('settings').insert(toSnakeCase(s) as any).select().single();
-    }
-
-    const products = [
-      { name: 'CRM Básico', description: 'Licencia básica de CRM por usuario/mes', sku: 'CRM-BASIC', price: 29, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
-      { name: 'CRM Profesional', description: 'Licencia profesional con automatizaciones', sku: 'CRM-PRO', price: 79, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
-      { name: 'CRM Enterprise', description: 'Licencia enterprise con soporte dedicado', sku: 'CRM-ENT', price: 199, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
-      { name: 'Implementación CRM', description: 'Servicio de implementación y configuración', sku: 'SRV-IMPL', price: 2500, taxRate: 21, unit: 'proyecto', type: 'service' as const, isActive: true },
-      { name: 'Capacitación Equipo', description: 'Formación para equipo de ventas (8 horas)', sku: 'SRV-TRAIN', price: 1200, taxRate: 21, unit: 'sesión', type: 'service' as const, isActive: true },
-      { name: 'Soporte Prioritario', description: 'Soporte 24/7 con SLA 4 horas', sku: 'SRV-SUP', price: 500, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
-    ];
-    for (const p of products) {
-      await supabase.from('products').insert(toSnakeCase(p) as any).select().single();
-    }
-
-    const teamMembers = [
-      { userId: '', department: 'Ventas', position: 'Director de Ventas', hireDate: '2023-01-15', skills: ['Gestión de equipos', 'Negociación', 'Estrategia comercial'], isActive: true },
-      { userId: '', department: 'Ventas', position: 'Account Executive', hireDate: '2023-06-01', skills: ['Prospección', 'Cierre de ventas', 'CRM'], isActive: true },
-      { userId: '', department: 'Soporte', position: 'Customer Success', hireDate: '2024-01-10', skills: ['Atención al cliente', 'Onboarding', 'Retención'], isActive: true },
-    ];
-    const createdUsers2 = await db.users.getAll();
-    for (const [i, tm] of teamMembers.entries()) {
-      if (createdUsers2[i]) {
-        await supabase.from('team_members').insert(toSnakeCase({ ...tm, userId: createdUsers2[i].id }) as any).select().single();
+      const { data: existing, error: checkError } = await supabase.from('permissions').select('id').limit(1);
+      if (checkError) {
+        console.error('Error checking seed status:', checkError);
+        return;
       }
-    }
+      if (existing && existing.length > 0) return;
 
-    localStorage.setItem('crm_seeded', 'true');
+      const createdPermissions: Permission[] = [];
+      for (const p of DEFAULT_PERMISSIONS) {
+        const { data, error } = await supabase.from('permissions').insert(toSnakeCase(p) as any).select().single();
+        if (error) {
+          console.error('Error creating permission:', p.name, error);
+          continue;
+        }
+        if (data) createdPermissions.push(fromSnakeCase(data));
+      }
+
+      const createdRoles: Role[] = [];
+      for (const r of DEFAULT_ROLES) {
+        const rolePermissions = r.permissions.map(permName => {
+          const perm = createdPermissions.find(p => `${p.resource}:${p.action}` === permName);
+          return perm ? perm.id : permName;
+        });
+        const { data, error } = await supabase.from('roles').insert(toSnakeCase({ ...r, permissions: rolePermissions }) as any).select().single();
+        if (error) {
+          console.error('Error creating role:', r.name, error);
+          continue;
+        }
+        if (data) createdRoles.push(fromSnakeCase(data));
+      }
+
+      const adminRole = createdRoles.find(r => r.name === 'Administrador');
+      const managerRole = createdRoles.find(r => r.name === 'Gerente de Ventas');
+      const sellerRole = createdRoles.find(r => r.name === 'Vendedor');
+
+      const createdUsers: User[] = [];
+      DEFAULT_USERS.forEach((u, i) => {
+        let roleId = sellerRole?.id ?? '';
+        if (i === 0) roleId = adminRole?.id ?? '';
+        if (i === 2) roleId = managerRole?.id ?? '';
+        createdUsers.push({ ...u, roleId } as User);
+      });
+
+      for (const u of createdUsers) {
+        const { error } = await supabase.from('users').insert(toSnakeCase(u) as any).select().single();
+        if (error) {
+          console.error('Error creating user:', u.email, error);
+        }
+      }
+
+      for (const [i, lead] of DEFAULT_LEADS.entries()) {
+        const { error } = await supabase.from('leads').insert(toSnakeCase({ ...lead, assignedTo: createdUsers[i % createdUsers.length]?.id ?? '' }) as any).select().single();
+        if (error) {
+          console.error('Error creating lead:', lead.firstName, lead.lastName, error);
+        }
+      }
+
+      const companies = [
+        { name: 'TechCorp Solutions', industry: 'Technology', size: '100-500', website: 'https://techcorp.com', phone: '+1-555-0100', address: '100 Tech Blvd', city: 'San Francisco', country: 'USA', notes: 'Leading tech solutions provider' },
+        { name: 'Global Manufacturing Inc', industry: 'Manufacturing', size: '1000+', website: 'https://globalmfg.com', phone: '+1-555-0200', address: '200 Industrial Way', city: 'Chicago', country: 'USA', notes: 'Global manufacturing leader' },
+        { name: 'Creative Agency Co', industry: 'Marketing', size: '10-50', website: 'https://creativeagency.com', phone: '+1-555-0300', address: '300 Design St', city: 'New York', country: 'USA', notes: 'Award-winning creative agency' },
+      ];
+
+      const contacts = [
+        { firstName: 'John', lastName: 'Smith', email: 'john.smith@techcorp.com', phone: '+1-555-1001', companyId: '', position: 'CTO', address: '100 Tech Blvd', city: 'San Francisco', country: 'USA', notes: 'Key decision maker' },
+        { firstName: 'Sarah', lastName: 'Johnson', email: 'sarah.j@globalmfg.com', phone: '+1-555-1002', companyId: '', position: 'VP Operations', address: '200 Industrial Way', city: 'Chicago', country: 'USA', notes: 'Operations lead' },
+        { firstName: 'Mike', lastName: 'Davis', email: 'mike.davis@creativeagency.com', phone: '+1-555-1003', companyId: '', position: 'Creative Director', address: '300 Design St', city: 'New York', country: 'USA', notes: 'Creative lead' },
+      ];
+
+      const deals = [
+        { title: 'Enterprise License Renewal', value: 50000, stage: 'proposal' as const, probability: 70, contactId: '', companyId: '', expectedCloseDate: '2026-12-15', description: 'Annual enterprise license renewal for TechCorp' },
+        { title: 'New CRM Implementation', value: 75000, stage: 'qualification' as const, probability: 40, contactId: '', companyId: '', expectedCloseDate: '2026-11-30', description: 'Full CRM implementation for Global Manufacturing' },
+        { title: 'Website Redesign Project', value: 25000, stage: 'negotiation' as const, probability: 80, contactId: '', companyId: '', expectedCloseDate: '2026-12-01', description: 'Complete website redesign for Creative Agency' },
+      ];
+
+      const activities = [
+        { type: 'meeting' as const, subject: 'Discovery call with TechCorp', description: 'Initial discovery meeting', dueDate: '2026-11-25', completed: false, contactId: '', companyId: '', dealId: '' },
+        { type: 'call' as const, subject: 'Follow up with Global Manufacturing', description: 'Discuss implementation timeline', dueDate: '2026-11-22', completed: true, contactId: '', companyId: '', dealId: '' },
+        { type: 'email' as const, subject: 'Proposal sent to Creative Agency', description: 'Sent website redesign proposal', dueDate: '2026-11-20', completed: true, contactId: '', companyId: '', dealId: '' },
+      ];
+
+      const createdCompanies: Company[] = [];
+      for (const c of companies) {
+        const { data, error } = await supabase.from('companies').insert(toSnakeCase(c) as any).select().single();
+        if (error) {
+          console.error('Error creating company:', c.name, error);
+        } else if (data) {
+          createdCompanies.push(fromSnakeCase(data));
+        }
+      }
+
+      const createdContacts: Contact[] = [];
+      for (const [i, c] of contacts.entries()) {
+        const { data, error } = await supabase.from('contacts').insert(toSnakeCase({ ...c, companyId: createdCompanies[i]?.id ?? '' }) as any).select().single();
+        if (error) {
+          console.error('Error creating contact:', c.firstName, c.lastName, error);
+        } else if (data) {
+          createdContacts.push(fromSnakeCase(data));
+        }
+      }
+
+      const createdDeals: Deal[] = [];
+      for (const [i, d] of deals.entries()) {
+        const { data, error } = await supabase.from('deals').insert(toSnakeCase({ ...d, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '' }) as any).select().single();
+        if (error) {
+          console.error('Error creating deal:', d.title, error);
+        } else if (data) {
+          createdDeals.push(fromSnakeCase(data));
+        }
+      }
+
+      for (const [i, a] of activities.entries()) {
+        const { error } = await supabase.from('activities').insert(toSnakeCase({ ...a, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '', dealId: createdDeals[i]?.id ?? '' }) as any).select().single();
+        if (error) {
+          console.error('Error creating activity:', a.subject, error);
+        }
+      }
+
+      const settings = [
+        { key: 'company_name', value: 'CRM Innovate', category: 'general' as const, description: 'Nombre de la empresa' },
+        { key: 'company_email', value: 'info@crminnovate.com', category: 'general' as const, description: 'Email de la empresa' },
+        { key: 'company_phone', value: '+34-900-123-456', category: 'general' as const, description: 'Teléfono de la empresa' },
+        { key: 'company_address', value: 'Calle Gran Vía 1, 28013 Madrid', category: 'general' as const, description: 'Dirección de la empresa' },
+        { key: 'default_currency', value: 'EUR', category: 'billing' as const, description: 'Moneda por defecto' },
+        { key: 'tax_rate', value: '21', category: 'billing' as const, description: 'Tipo de IVA por defecto (%)' },
+        { key: 'invoice_prefix', value: 'FAC-', category: 'billing' as const, description: 'Prefijo para facturas' },
+        { key: 'quote_prefix', value: 'PRES-', category: 'billing' as const, description: 'Prefijo para presupuestos' },
+        { key: 'email_notifications', value: 'true', category: 'email' as const, description: 'Activar notificaciones por email' },
+        { key: 'theme', value: 'light', category: 'appearance' as const, description: 'Tema de la interfaz' },
+      ];
+      for (const s of settings) {
+        const { error } = await supabase.from('settings').insert(toSnakeCase(s) as any).select().single();
+        if (error) {
+          console.error('Error creating setting:', s.key, error);
+        }
+      }
+
+      const products = [
+        { name: 'CRM Básico', description: 'Licencia básica de CRM por usuario/mes', sku: 'CRM-BASIC', price: 29, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
+        { name: 'CRM Profesional', description: 'Licencia profesional con automatizaciones', sku: 'CRM-PRO', price: 79, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
+        { name: 'CRM Enterprise', description: 'Licencia enterprise con soporte dedicado', sku: 'CRM-ENT', price: 199, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
+        { name: 'Implementación CRM', description: 'Servicio de implementación y configuración', sku: 'SRV-IMPL', price: 2500, taxRate: 21, unit: 'proyecto', type: 'service' as const, isActive: true },
+        { name: 'Capacitación Equipo', description: 'Formación para equipo de ventas (8 horas)', sku: 'SRV-TRAIN', price: 1200, taxRate: 21, unit: 'sesión', type: 'service' as const, isActive: true },
+        { name: 'Soporte Prioritario', description: 'Soporte 24/7 con SLA 4 horas', sku: 'SRV-SUP', price: 500, taxRate: 21, unit: 'mes', type: 'service' as const, isActive: true },
+      ];
+      for (const p of products) {
+        const { error } = await supabase.from('products').insert(toSnakeCase(p) as any).select().single();
+        if (error) {
+          console.error('Error creating product:', p.name, error);
+        }
+      }
+
+      const teamMembers = [
+        { userId: '', department: 'Ventas', position: 'Director de Ventas', hireDate: '2023-01-15', skills: ['Gestión de equipos', 'Negociación', 'Estrategia comercial'], isActive: true },
+        { userId: '', department: 'Ventas', position: 'Account Executive', hireDate: '2023-06-01', skills: ['Prospección', 'Cierre de ventas', 'CRM'], isActive: true },
+        { userId: '', department: 'Soporte', position: 'Customer Success', hireDate: '2024-01-10', skills: ['Atención al cliente', 'Onboarding', 'Retención'], isActive: true },
+      ];
+      const createdUsers2 = await db.users.getAll();
+      for (const [i, tm] of teamMembers.entries()) {
+        if (createdUsers2[i]) {
+          const { error } = await supabase.from('team_members').insert(toSnakeCase({ ...tm, userId: createdUsers2[i].id }) as any).select().single();
+          if (error) {
+            console.error('Error creating team member:', createdUsers2[i].firstName, error);
+          }
+        }
+      }
+
+      localStorage.setItem('crm_seeded', 'true');
+      console.log('Seed completed successfully');
+    } catch (error) {
+      console.error('Seed failed:', error);
+    }
   },
 
   auth: {
@@ -649,7 +700,19 @@ export const db = {
     getCurrentUser: () => {
       if (typeof window === 'undefined') return null;
       const data = localStorage.getItem('crm_current_user');
-      return data ? JSON.parse(data) : null;
+      if (!data) return null;
+      try {
+        const user = JSON.parse(data);
+        // Clear session if roleId is not a valid UUID (old localStorage format)
+        if (user.roleId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.roleId)) {
+          localStorage.removeItem('crm_current_user');
+          localStorage.removeItem('crm_seeded');
+          return null;
+        }
+        return user;
+      } catch {
+        return null;
+      }
     },
     setCurrentUser: (user: any) => {
       if (typeof window === 'undefined') return;
@@ -664,8 +727,10 @@ export const db = {
       if (!user) return false;
       const role = await db.roles.getById(user.roleId);
       if (!role) return false;
+      if (role.name === 'Administrador') return true;
       const userPermissions: string[] = [];
-      for (const permId of role.permissions) {
+      const permissions = role.permissions || [];
+      for (const permId of permissions) {
         const perm = await db.permissions.getById(permId);
         userPermissions.push(perm ? `${perm.resource}:${perm.action}` : permId);
       }

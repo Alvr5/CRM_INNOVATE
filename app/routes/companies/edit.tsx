@@ -22,7 +22,7 @@ export async function clientAction({ request, params }: { request: Request; para
     notes: formData.get('notes') as string,
   };
 
-  db.companies.update(params.id!, data);
+  await db.companies.update(params.id!, data);
   return redirect(`/companies/${params.id}`);
 }
 
@@ -31,8 +31,8 @@ export default function EditCompany() {
   const params = useParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = () => {
-    db.companies.delete(params.id!);
+  const handleDelete = async () => {
+    await db.companies.delete(params.id!);
     window.location.href = '/companies';
   };
 

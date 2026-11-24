@@ -45,8 +45,8 @@ export default function CompanyShow() {
     'closed-lost': 'bg-red-100 text-red-700',
   };
 
-  const handleDelete = () => {
-    db.companies.delete(company.id);
+  const handleDelete = async () => {
+    await db.companies.delete(company.id);
     window.location.href = '/companies';
   };
 

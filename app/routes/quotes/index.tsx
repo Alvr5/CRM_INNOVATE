@@ -3,9 +3,9 @@ import { db } from "~/lib/db";
 import type { Quote } from "~/lib/db";
 
 export async function clientLoader() {
-  const quotes = db.quotes.getAll();
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
+  const quotes = await db.quotes.getAll();
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
   return { quotes, contacts, companies };
 }
 

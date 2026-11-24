@@ -3,8 +3,8 @@ import { db } from "~/lib/db";
 import type { User } from "~/lib/db";
 
 export async function clientLoader() {
-  const users = db.users.getAll().filter(u => u.isActive);
-  const teamMembers = db.teamMembers.getAll();
+  const users = (await db.users.getAll()).filter(u => u.isActive);
+  const teamMembers = await db.teamMembers.getAll();
   const availableUsers = users.filter(u => !teamMembers.some(tm => tm.userId === u.id));
   return { availableUsers };
 }
@@ -20,7 +20,7 @@ export async function clientAction({ request }: { request: Request }) {
     skills: (formData.get("skills") as string).split(',').map(s => s.trim()).filter(s => s),
     isActive: formData.get("isActive") === "on",
   };
-  db.teamMembers.create(data);
+  await db.teamMembers.create(data);
   return redirect("/team");
 }
 

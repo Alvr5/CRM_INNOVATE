@@ -4,14 +4,14 @@ import { useState } from "react";
 import type { Invoice, Product, Contact, Company } from "~/lib/db";
 
 export async function clientLoader() {
-  const products = db.products.getAll().filter(p => p.isActive);
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
-  const settings = db.settings.getAll();
+  const products = (await db.products.getAll()).filter(p => p.isActive);
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
+  const settings = await db.settings.getAll();
   const invoicePrefix = settings.find(s => s.key === 'invoice_prefix')?.value || 'FAC-';
   const defaultCurrency = settings.find(s => s.key === 'default_currency')?.value || 'EUR';
   const defaultTaxRate = parseFloat(settings.find(s => s.key === 'tax_rate')?.value || '21');
-  const invoiceCount = db.invoices.getAll().length + 1;
+  const invoiceCount = (await db.invoices.getAll()).length + 1;
   return { products, contacts, companies, invoicePrefix, defaultCurrency, defaultTaxRate, invoiceCount };
 }
 
@@ -54,7 +54,7 @@ export async function clientAction({ request }: { request: Request }) {
     items,
   };
 
-  db.invoices.create(data);
+  await db.invoices.create(data);
   return redirect("/invoices");
 }
 

@@ -3,10 +3,10 @@ import { db } from "~/lib/db";
 import type { Quote, Contact, Company } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const quote = db.quotes.getById(params.id);
+  const quote = await db.quotes.getById(params.id);
   if (!quote) throw new Response("Presupuesto no encontrado", { status: 404 });
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
   return { quote, contacts, companies };
 }
 

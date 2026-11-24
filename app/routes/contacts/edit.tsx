@@ -25,7 +25,7 @@ export async function clientAction({ request, params }: { request: Request; para
     notes: formData.get('notes') as string,
   };
 
-  db.contacts.update(params.id!, data);
+  await db.contacts.update(params.id!, data);
   return redirect(`/contacts/${params.id}`);
 }
 
@@ -34,8 +34,8 @@ export default function EditContact() {
   const params = useParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = () => {
-    db.contacts.delete(params.id!);
+  const handleDelete = async () => {
+    await db.contacts.delete(params.id!);
     window.location.href = '/contacts';
   };
 

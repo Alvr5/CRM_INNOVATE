@@ -4,12 +4,12 @@ import { useState } from "react";
 import type { Invoice, Product, Contact, Company } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const invoice = db.invoices.getById(params.id);
+  const invoice = await db.invoices.getById(params.id);
   if (!invoice) throw new Response("Factura no encontrada", { status: 404 });
-  const products = db.products.getAll().filter(p => p.isActive);
-  const contacts = db.contacts.getAll();
-  const companies = db.companies.getAll();
-  const settings = db.settings.getAll();
+  const products = (await db.products.getAll()).filter(p => p.isActive);
+  const contacts = await db.contacts.getAll();
+  const companies = await db.companies.getAll();
+  const settings = await db.settings.getAll();
   const defaultTaxRate = parseFloat(settings.find(s => s.key === 'tax_rate')?.value || '21');
   return { invoice, products, contacts, companies, defaultTaxRate };
 }
@@ -53,7 +53,7 @@ export async function clientAction({ request, params }: { request: Request; para
     items,
   };
 
-  db.invoices.update(params.id, data);
+  await db.invoices.update(params.id, data);
   return redirect("/invoices");
 }
 

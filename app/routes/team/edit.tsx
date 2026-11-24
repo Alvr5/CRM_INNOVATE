@@ -3,9 +3,9 @@ import { db } from "~/lib/db";
 import type { TeamMember, User } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const member = db.teamMembers.getById(params.id);
+  const member = await db.teamMembers.getById(params.id);
   if (!member) throw new Response("Miembro no encontrado", { status: 404 });
-  const users = db.users.getAll().filter(u => u.isActive);
+  const users = (await db.users.getAll()).filter(u => u.isActive);
   return { member, users };
 }
 
@@ -20,7 +20,7 @@ export async function clientAction({ request, params }: { request: Request; para
     skills: (formData.get("skills") as string).split(',').map(s => s.trim()).filter(s => s),
     isActive: formData.get("isActive") === "on",
   };
-  db.teamMembers.update(params.id, data);
+  await db.teamMembers.update(params.id, data);
   return redirect("/team");
 }
 

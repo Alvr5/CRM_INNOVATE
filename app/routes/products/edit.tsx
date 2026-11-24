@@ -3,7 +3,7 @@ import { db } from "~/lib/db";
 import type { Product } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const product = db.products.getById(params.id);
+  const product = await db.products.getById(params.id);
   if (!product) throw new Response("Producto no encontrado", { status: 404 });
   return { product };
 }
@@ -20,7 +20,7 @@ export async function clientAction({ request, params }: { request: Request; para
     type: formData.get("type") as 'product' | 'service',
     isActive: formData.get("isActive") === "on",
   };
-  db.products.update(params.id, data);
+  await db.products.update(params.id, data);
   return redirect("/products");
 }
 

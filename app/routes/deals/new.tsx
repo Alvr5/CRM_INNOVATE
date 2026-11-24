@@ -27,7 +27,7 @@ export async function clientAction({ request }: { request: Request }) {
     description: formData.get('description') as string,
   };
 
-  const deal = db.deals.create(data);
+  const deal = await db.deals.create(data);
   return redirect(`/deals/${deal.id}`);
 }
 

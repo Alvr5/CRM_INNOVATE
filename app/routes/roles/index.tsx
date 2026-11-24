@@ -120,9 +120,9 @@ export default function RolesIndex() {
                       )}
                       {hasPermission('roles', 'delete') && !role.isSystem && (
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm('¿Estás seguro de eliminar este rol?')) {
-                              db.roles.delete(role.id);
+                              await db.roles.delete(role.id);
                               window.location.reload();
                             }
                           }}
