@@ -507,19 +507,38 @@ export const db = {
   quotes: createCrud<Quote>('quotes'),
   teamMembers: createCrud<TeamMember>('teamMembers'),
 
-  seed: async () => {
+  seed: async (force = false) => {
     if (typeof window === 'undefined') return;
 
     try {
-      // Clear old localStorage seed flag so we always check Supabase
-      localStorage.removeItem('crm_seeded');
-
-      const { data: existing, error: checkError } = await supabase.from('permissions').select('id').limit(1);
-      if (checkError) {
-        console.error('Error checking seed status:', checkError);
-        return;
+      if (force) {
+        localStorage.removeItem('crm_seeded');
+        // Clear existing data for full reseed
+        await supabase.from('activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('deals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('contacts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('companies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('quotes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('team_members').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('roles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('permissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } else {
+        // Check if seed is already complete (permissions + roles + users)
+        const [{ data: perms }, { data: roles }, { data: users }] = await Promise.all([
+          supabase.from('permissions').select('id').limit(1),
+          supabase.from('roles').select('id').limit(1),
+          supabase.from('users').select('id').limit(1),
+        ]);
+        if (perms?.length && roles?.length && users?.length) {
+          console.log('Seed already complete, skipping');
+          return;
+        }
       }
-      if (existing && existing.length > 0) return;
 
       const createdPermissions: Permission[] = [];
       for (const p of DEFAULT_PERMISSIONS) {
@@ -625,6 +644,8 @@ export const db = {
         }
       }
 
+      const createdUsers2 = await db.users.getAll();
+
       for (const [i, a] of activities.entries()) {
         const assigneeId = createdUsers2[i % createdUsers2.length]?.id ?? '';
         const { error } = await supabase.from('activities').insert(toSnakeCase({ ...a, assigneeId, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '', dealId: createdDeals[i]?.id ?? '' }) as any).select().single();
@@ -672,7 +693,6 @@ export const db = {
         { userId: '', department: 'Ventas', position: 'Account Executive', hireDate: '2023-06-01', skills: ['Prospección', 'Cierre de ventas', 'CRM'], isActive: true },
         { userId: '', department: 'Soporte', position: 'Customer Success', hireDate: '2024-01-10', skills: ['Atención al cliente', 'Onboarding', 'Retención'], isActive: true },
       ];
-      const createdUsers2 = await db.users.getAll();
       for (const [i, tm] of teamMembers.entries()) {
         if (createdUsers2[i]) {
           const { error } = await supabase.from('team_members').insert(toSnakeCase({ ...tm, userId: createdUsers2[i].id }) as any).select().single();

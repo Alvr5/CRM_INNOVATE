@@ -16,7 +16,7 @@ export function DBInitializer() {
 // Export a function to manually trigger re-seed
 export async function forceReSeed() {
   localStorage.removeItem('crm_seeded');
-  await db.seed();
+  await db.seed(true); // force = true
   window.dispatchEvent(new Event('crm:seed-complete'));
 }
 
