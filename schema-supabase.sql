@@ -94,6 +94,8 @@ CREATE TABLE IF NOT EXISTS activities (
   description TEXT,
   due_date TIMESTAMPTZ,
   completed BOOLEAN DEFAULT FALSE,
+  status TEXT DEFAULT 'pending',
+  assignee_id UUID,
   contact_id UUID,
   company_id UUID,
   deal_id UUID,

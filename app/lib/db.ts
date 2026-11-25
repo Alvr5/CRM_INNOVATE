@@ -52,6 +52,8 @@ export interface Activity {
   description: string;
   dueDate: string;
   completed: boolean;
+  status: 'pending' | 'in_progress' | 'review' | 'completed';
+  assigneeId?: string;
   contactId?: string;
   companyId?: string;
   dealId?: string;
@@ -588,9 +590,9 @@ export const db = {
       ];
 
       const activities = [
-        { type: 'meeting' as const, subject: 'Discovery call with TechCorp', description: 'Initial discovery meeting', dueDate: '2026-11-25', completed: false, contactId: '', companyId: '', dealId: '' },
-        { type: 'call' as const, subject: 'Follow up with Global Manufacturing', description: 'Discuss implementation timeline', dueDate: '2026-11-22', completed: true, contactId: '', companyId: '', dealId: '' },
-        { type: 'email' as const, subject: 'Proposal sent to Creative Agency', description: 'Sent website redesign proposal', dueDate: '2026-11-20', completed: true, contactId: '', companyId: '', dealId: '' },
+        { type: 'meeting' as const, subject: 'Discovery call with TechCorp', description: 'Initial discovery meeting', dueDate: '2026-11-25', completed: false, status: 'pending' as const, assigneeId: '', contactId: '', companyId: '', dealId: '' },
+        { type: 'call' as const, subject: 'Follow up with Global Manufacturing', description: 'Discuss implementation timeline', dueDate: '2026-11-22', completed: true, status: 'completed' as const, assigneeId: '', contactId: '', companyId: '', dealId: '' },
+        { type: 'email' as const, subject: 'Proposal sent to Creative Agency', description: 'Sent website redesign proposal', dueDate: '2026-11-20', completed: true, status: 'completed' as const, assigneeId: '', contactId: '', companyId: '', dealId: '' },
       ];
 
       const createdCompanies: Company[] = [];
@@ -624,7 +626,8 @@ export const db = {
       }
 
       for (const [i, a] of activities.entries()) {
-        const { error } = await supabase.from('activities').insert(toSnakeCase({ ...a, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '', dealId: createdDeals[i]?.id ?? '' }) as any).select().single();
+        const assigneeId = createdUsers2[i % createdUsers2.length]?.id ?? '';
+        const { error } = await supabase.from('activities').insert(toSnakeCase({ ...a, assigneeId, contactId: createdContacts[i]?.id ?? '', companyId: createdCompanies[i]?.id ?? '', dealId: createdDeals[i]?.id ?? '' }) as any).select().single();
         if (error) {
           console.error('Error creating activity:', a.subject, error);
         }
