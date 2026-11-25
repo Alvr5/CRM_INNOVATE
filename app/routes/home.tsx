@@ -88,7 +88,7 @@ export default function Home() {
     { name: 'Contactos', description: 'Base de datos de contactos', href: '/contacts', icon: ContactsIcon, color: 'green', permission: { resource: 'contacts', action: 'read' } },
     { name: 'Empresas', description: 'Empresas y organizaciones', href: '/companies', icon: CompaniesIcon, color: 'purple', permission: { resource: 'companies', action: 'read' } },
     { name: 'Oportunidades', description: 'Pipeline de ventas', href: '/deals', icon: DealsIcon, color: 'orange', permission: { resource: 'deals', action: 'read' } },
-    { name: 'Actividades', description: 'Tareas, llamadas, reuniones', href: '/activities', icon: ActivitiesIcon, color: 'red', permission: { resource: 'activities', action: 'read' } },
+    { name: 'Tareas', description: 'Tablero Kanban de tareas', href: '/tasks', icon: TasksIcon, color: 'red', permission: { resource: 'activities', action: 'read' } },
     { name: 'Productos', description: 'Catálogo de productos y servicios', href: '/products', icon: ProductsIcon, color: 'indigo', permission: { resource: 'products', action: 'read' } },
     { name: 'Facturas', description: 'Facturación y cobros', href: '/invoices', icon: InvoicesIcon, color: 'teal', permission: { resource: 'invoices', action: 'read' } },
     { name: 'Presupuestos', description: 'Presupuestos y ofertas', href: '/quotes', icon: QuotesIcon, color: 'cyan', permission: { resource: 'quotes', action: 'read' } },
@@ -187,7 +187,7 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Próximas Actividades</h2>
-            <Link to="/activities" className="text-sm text-blue-600 hover:text-blue-800">Ver todas</Link>
+            <Link to="/tasks" className="text-sm text-blue-600 hover:text-blue-800">Ver todas</Link>
           </div>
           <div className="divide-y divide-gray-200">
             {upcomingActivities.length === 0 ? (
@@ -221,7 +221,7 @@ export default function Home() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Actividad Reciente</h2>
-          <Link to="/activities" className="text-sm text-blue-600 hover:text-blue-800">Ver todas</Link>
+          <Link to="/tasks" className="text-sm text-blue-600 hover:text-blue-800">Ver todas</Link>
         </div>
         <div className="divide-y divide-gray-200">
           {recentActivities.length === 0 ? (
@@ -319,6 +319,10 @@ function LeadsIcon({ className }: { className?: string }) {
 }
 
 function ActivitiesIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
+}
+
+function TasksIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
 }
 
