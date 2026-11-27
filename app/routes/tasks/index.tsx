@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useState, useEffect } from "react";
 import { db } from "~/lib/db";
 import type { Activity, User } from "~/lib/db";
@@ -49,14 +49,10 @@ export default function TasksIndex() {
   const { tasksByStatus, users, userMap } = useLoaderData<typeof clientLoader>();
   const [showNewTask, setShowNewTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Activity | null>(null);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(setNotificationPermission);
-      }
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
   }, []);
 

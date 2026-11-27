@@ -156,7 +156,7 @@ export default function InvoicesNew() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-          <textarea name="notes" rows="2" className="input-field" placeholder="Notas adicionales para la factura"></textarea>
+          <textarea name="notes" rows={2} className="input-field" placeholder="Notas adicionales para la factura"></textarea>
         </div>
 
         <div>

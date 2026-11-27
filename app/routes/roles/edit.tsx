@@ -10,6 +10,10 @@ const ALL_PERMISSIONS = [
   { resource: 'companies', label: 'Empresas' },
   { resource: 'deals', label: 'Oportunidades' },
   { resource: 'activities', label: 'Actividades' },
+  { resource: 'products', label: 'Productos' },
+  { resource: 'invoices', label: 'Facturas' },
+  { resource: 'quotes', label: 'Presupuestos' },
+  { resource: 'teamMembers', label: 'Equipo' },
   { resource: 'users', label: 'Usuarios' },
   { resource: 'roles', label: 'Roles' },
   { resource: 'settings', label: 'Configuración' },
@@ -42,11 +46,12 @@ export async function clientAction({ request, params }: { request: Request; para
   });
 
   await db.roles.update(params.id!, { name, description, permissions });
+  db.auth.invalidateCache();
   return redirect(`/roles`);
 }
 
 export default function EditRole() {
-  const { role, permissions, permissionMap } = useLoaderData<typeof clientLoader>();
+  const { role, permissionMap } = useLoaderData<typeof clientLoader>();
   const params = useParams();
   const { isAdmin, hasPermission } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -63,6 +68,7 @@ export default function EditRole() {
 
   const handleDelete = async () => {
     await db.roles.delete(params.id!);
+    db.auth.invalidateCache();
     window.location.href = '/roles';
   };
 
@@ -103,11 +109,19 @@ export default function EditRole() {
                   <tr key={p.resource} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-left text-sm font-medium text-gray-900">{p.label}</td>
                     {ACTIONS.map(a => {
-                      const hasPerm = rolePermissions.some(permId => {
-                        const perm = permissionMap[permId];
-                        return perm && 'resource' in perm && 'action' in perm &&
-                          perm.resource === p.resource && perm.action === a;
-                      }) || rolePermissions.includes(`${p.resource}:manage`);
+                      const hasPerm =
+                        rolePermissions.includes(`${p.resource}:${a}`) ||
+                        rolePermissions.includes(`${p.resource}:manage`) ||
+                        rolePermissions.some((permId) => {
+                          const perm = permissionMap[permId];
+                          return (
+                            perm &&
+                            'resource' in perm &&
+                            'action' in perm &&
+                            perm.resource === p.resource &&
+                            perm.action === a
+                          );
+                        });
                       return (
                         <td key={a} className="px-4 py-3 text-center">
                           <input

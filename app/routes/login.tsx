@@ -73,14 +73,6 @@ export default function Login() {
             </button>
           </div>
         </form>
-{/* 
-        <div className="text-center text-sm text-gray-500">
-          <p>Usuarios de prueba:</p>
-          <p className="font-mono text-xs mt-1">admin@crm.com / admin123 (Administrador)</p>
-          <p className="font-mono text-xs">juan@crm.com / vendedor123 (Vendedor)</p>
-          <p className="font-mono text-xs">maria@crm.com / gerente123 (Gerente)</p>
-        </div>
-        */ }
       </div>
     </div>
   );

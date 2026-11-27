@@ -15,19 +15,10 @@ export async function clientLoader() {
     db.quotes.getAll(),
     db.teamMembers.getAll(),
   ]);
-  const dealRecords = deals.filter(
-    (deal): deal is Extract<(typeof deals)[number], { createdAt: string; title: string; value: number | string; stage: string }> =>
-      'createdAt' in deal && 'title' in deal && 'value' in deal && 'stage' in deal
-  );
-  const activityRecords = activities.filter(
-    (activity): activity is Extract<(typeof activities)[number], { completed: boolean; createdAt: string; dueDate: string }> =>
-      'completed' in activity && 'createdAt' in activity && 'dueDate' in activity
-  );
-
-  const totalPipelineValue = dealRecords.reduce((sum, d) => sum + Number(d.value), 0);
-  const wonDeals = dealRecords.filter(d => d.stage === 'closed-won').length;
-  const openDeals = dealRecords.filter(d => !['closed-won', 'closed-lost'].includes(d.stage)).length;
-  const pendingActivities = activityRecords.filter(a => !a.completed).length;
+  const totalPipelineValue = deals.reduce((sum, deal) => sum + Number(deal.value), 0);
+  const wonDeals = deals.filter((deal) => deal.stage === 'closed-won').length;
+  const openDeals = deals.filter((deal) => !['closed-won', 'closed-lost'].includes(deal.stage)).length;
+  const pendingActivities = activities.filter((activity) => !activity.completed).length;
 
   return {
     stats: {
@@ -44,9 +35,9 @@ export async function clientLoader() {
       totalQuotes: quotes.length,
       totalTeamMembers: teamMembers.length,
     },
-    recentDeals: [...dealRecords].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
-    recentActivities: [...activityRecords].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
-    upcomingActivities: activityRecords.filter(a => !a.completed).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).slice(0, 5),
+    recentDeals: [...deals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
+    recentActivities: [...activities].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
+    upcomingActivities: activities.filter(a => !a.completed).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).slice(0, 5),
   };
 }
 
@@ -109,7 +100,7 @@ export default function Home() {
     Contactos: stats.totalContacts,
     Empresas: stats.totalCompanies,
     Oportunidades: stats.totalDeals,
-    Actividades: stats.pendingActivities,
+    Tareas: stats.pendingActivities,
     Productos: stats.totalProducts,
     Facturas: stats.totalInvoices,
     Presupuestos: stats.totalQuotes,
@@ -316,10 +307,6 @@ function CheckCircleIcon({ className }: { className?: string }) {
 
 function LeadsIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>;
-}
-
-function ActivitiesIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
 }
 
 function TasksIcon({ className }: { className?: string }) {

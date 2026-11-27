@@ -1,4 +1,4 @@
-import { Form, useLoaderData, redirect } from "react-router";
+import { Form, Link, useLoaderData, redirect } from "react-router";
 import { db } from "~/lib/db";
 import { useState } from "react";
 import type { Invoice, Product, Contact, Company } from "~/lib/db";
@@ -158,7 +158,7 @@ export default function InvoicesEdit() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-          <textarea name="notes" rows="2" className="input-field" defaultValue={invoice.notes}></textarea>
+          <textarea name="notes" rows={2} className="input-field" defaultValue={invoice.notes}></textarea>
         </div>
 
         <div>

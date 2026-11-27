@@ -55,7 +55,6 @@ const navigation: NavItem[] = [
     permission: { resource: 'activities', action: 'read' },
     children: [
       { name: 'Tablero Kanban', href: '/tasks', permission: { resource: 'activities', action: 'read' } },
-      { name: 'Nueva Tarea', href: '/tasks/new', permission: { resource: 'activities', action: 'create' } },
     ]
   },
   {
@@ -154,9 +153,6 @@ function SettingsIcon({ className }: { className?: string }) {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [isAdminState, setIsAdminState] = useState(false);
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
-  const [loadingPermissions, setLoadingPermissions] = useState(true);
   const location = useLocation();
   const { user, logout, hasPermission, isAdmin, loading } = useAuth();
 
@@ -164,49 +160,7 @@ export default function Layout() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (user) {
-      let cancelled = false;
-      const loadPermissions = async () => {
-        try {
-          const admin = await isAdmin();
-          if (!cancelled) setIsAdminState(admin);
-          
-          const resources = ['leads', 'contacts', 'companies', 'deals', 'activities', 'users', 'roles', 'settings', 'products', 'invoices', 'quotes', 'teamMembers'];
-          const actions = ['read', 'create', 'update', 'delete'];
-          const checks = resources.flatMap(r => actions.map(a => hasPermission(r, a)));
-          const results = await Promise.all(checks);
-          
-          if (!cancelled) {
-            const perms = new Set<string>();
-            let i = 0;
-            resources.forEach(r => {
-              actions.forEach(a => {
-                if (results[i]) perms.add(`${r}:${a}`);
-                i++;
-              });
-            });
-            setPermissions(perms);
-            setLoadingPermissions(false);
-          }
-        } catch (error) {
-          console.error('Error loading permissions:', error);
-          if (!cancelled) {
-            setLoadingPermissions(false);
-          }
-        }
-      };
-      
-      loadPermissions();
-      return () => { cancelled = true; };
-    } else {
-      setPermissions(new Set());
-      setIsAdminState(false);
-      setLoadingPermissions(false);
-    }
-  }, [user, hasPermission, isAdmin]);
-
-  if (loading || loadingPermissions) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
@@ -218,18 +172,17 @@ export default function Layout() {
     return <Navigate to="/login" replace />;
   }
 
-  const filteredNavigation = navigation.filter(item => {
-    if (item.adminOnly && !isAdminState) return false;
-    if (item.permission && !permissions.has(`${item.permission.resource}:${item.permission.action}`)) return false;
+  const filteredNavigation = navigation.filter((item) => {
+    if (item.adminOnly && !isAdmin()) return false;
+    if (item.permission && !hasPermission(item.permission.resource, item.permission.action)) return false;
     return true;
   });
 
-  const filterChildren = (children: NavItem[]) => {
-    return children.filter(child => {
-      if (child.permission && !permissions.has(`${child.permission.resource}:${child.permission.action}`)) return false;
-      return true;
-    });
-  };
+  const filterChildren = (children: NavItem[]) =>
+    children.filter(
+      (child) =>
+        !child.permission || hasPermission(child.permission.resource, child.permission.action),
+    );
 
   const handleToggleSection = (sectionName: string) => {
     setExpandedSections(prev => {
@@ -268,10 +221,14 @@ export default function Layout() {
             {filteredNavigation.map((item) => {
               const isActive = item.href && (location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href)));
               const hasChildren = item.children && item.children.length > 0;
-              const filteredChildren = hasChildren ? filterChildren(item.children) : [];
+              const filteredChildren = filterChildren(item.children ?? []);
               const isExpanded = expandedSections.has(item.name);
 
-              if (hasChildren && filteredChildren.length > 0) {
+              // Si el usuario puede ver la sección pero ningún hijo, no se pinta
+              // (evita un Link con `to` indefinido).
+              if (hasChildren && filteredChildren.length === 0) return null;
+
+              if (hasChildren) {
                 return (
                   <div key={item.name}>
                     <button
@@ -282,7 +239,7 @@ export default function Layout() {
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
-                      <item.icon className="w-5 h-5 mr-3" aria-hidden="true" />
+                      {item.icon && <item.icon className="w-5 h-5 mr-3" aria-hidden="true" />}
                       {item.name}
                       <svg
                         className={`ml-auto w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -364,7 +321,7 @@ export default function Layout() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
             <div className="flex-1 lg:flex-none">
-              <h2 className="text-lg font-semibold text-gray-900">{filteredNavigation.find(n => location.pathname === n.href || (n.href !== '/' && location.pathname.startsWith(n.href)))?.name || 'Dashboard'}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{filteredNavigation.find(n => n.href && (location.pathname === n.href || (n.href !== '/' && location.pathname.startsWith(n.href))))?.name || 'Dashboard'}</h2>
             </div>
           </div>
         </header>

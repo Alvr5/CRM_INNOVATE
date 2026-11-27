@@ -1,4 +1,4 @@
-import { Form, useLoaderData, useActionData, redirect } from "react-router";
+import { Form, useLoaderData, redirect } from "react-router";
 import { db } from "~/lib/db";
 import type { Product } from "~/lib/db";
 
@@ -26,7 +26,6 @@ export async function clientAction({ request, params }: { request: Request; para
 
 export default function ProductsEdit() {
   const { product } = useLoaderData() as { product: Product };
-  const actionData = useActionData<{ errors?: Record<string, string> }>();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -51,7 +50,7 @@ export default function ProductsEdit() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-          <textarea name="description" rows="3" className="input-field" defaultValue={product.description}></textarea>
+          <textarea name="description" rows={3} className="input-field" defaultValue={product.description}></textarea>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
