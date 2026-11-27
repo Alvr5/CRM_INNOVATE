@@ -5,5 +5,15 @@
 /.react-router/
 /build/
 
+# Entorno local (nunca subir credenciales)
+.env
+.env.*
+!.env.example
+
+# Salidas de build / empaquetado
+/dist/
+/dist-electron/
+/.tmp/
+
 .vercel
 config.bat
