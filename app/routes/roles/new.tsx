@@ -1,4 +1,4 @@
-import { Form, useLoaderData, redirect, useNavigate } from "react-router";
+import { Form, redirect, useNavigate } from "react-router";
 import { db } from "~/lib/db";
 import { useAuth } from "~/context/AuthContext";
 import { useEffect } from "react";
@@ -9,18 +9,16 @@ const ALL_PERMISSIONS = [
   { resource: 'companies', label: 'Empresas' },
   { resource: 'deals', label: 'Oportunidades' },
   { resource: 'activities', label: 'Actividades' },
+  { resource: 'products', label: 'Productos' },
+  { resource: 'invoices', label: 'Facturas' },
+  { resource: 'quotes', label: 'Presupuestos' },
+  { resource: 'teamMembers', label: 'Equipo' },
   { resource: 'users', label: 'Usuarios' },
   { resource: 'roles', label: 'Roles' },
   { resource: 'settings', label: 'Configuración' },
 ] as const;
 
 const ACTIONS = ['create', 'read', 'update', 'delete', 'manage'] as const;
-
-export async function clientLoader() {
-  const permissions = await db.permissions.getAll();
-  const permissionMap = new Map(permissions.map(p => [p.id, p]));
-  return { permissions, permissionMap };
-}
 
 export async function clientAction({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -41,7 +39,6 @@ export async function clientAction({ request }: { request: Request }) {
 }
 
 export default function NewRole() {
-  const { permissions, permissionMap } = useLoaderData<typeof clientLoader>();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -87,22 +84,17 @@ export default function NewRole() {
                 {ALL_PERMISSIONS.map(p => (
                   <tr key={p.resource} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-left text-sm font-medium text-gray-900">{p.label}</td>
-                    {ACTIONS.map(a => {
-                      const perm = permissions.find(
-                        p2 => 'resource' in p2 && 'action' in p2 && p2.resource === p.resource && p2.action === a
-                      );
-                      return (
-                        <td key={a} className="px-4 py-3 text-center">
-                          <input
-                            type="checkbox"
-                            id={`${p.resource}:${a}`}
-                            name={`${p.resource}:${a}`}
-                            value="on"
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                          />
-                        </td>
-                      );
-                    })}
+                    {ACTIONS.map(a => (
+                      <td key={a} className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          id={`${p.resource}:${a}`}
+                          name={`${p.resource}:${a}`}
+                          value="on"
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                        />
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

@@ -162,7 +162,7 @@ export default function DealShow() {
               const stage = prompt('Nueva etapa (prospecting, qualification, proposal, negotiation, closed-won, closed-lost):');
               if (stage && ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed-won', 'closed-lost'].includes(stage)) {
                 const form = e.target as HTMLFormElement;
-                form.querySelector('input[name="stage"]')!.value = stage;
+                (form.querySelector('input[name="stage"]') as HTMLInputElement).value = stage;
               } else {
                 e.preventDefault();
               }

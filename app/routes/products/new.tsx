@@ -1,6 +1,5 @@
-import { Form, useActionData, redirect } from "react-router";
+import { Form, redirect } from "react-router";
 import { db } from "~/lib/db";
-import type { Product } from "~/lib/db";
 
 export async function clientAction({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -19,8 +18,6 @@ export async function clientAction({ request }: { request: Request }) {
 }
 
 export default function ProductsNew() {
-  const actionData = useActionData<{ errors?: Record<string, string> }>();
-
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -44,7 +41,7 @@ export default function ProductsNew() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-          <textarea name="description" rows="3" className="input-field" placeholder="Descripción del producto o servicio"></textarea>
+          <textarea name="description" rows={3} className="input-field" placeholder="Descripción del producto o servicio"></textarea>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

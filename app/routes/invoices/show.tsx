@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 import { db } from "~/lib/db";
-import type { Invoice, Contact, Company } from "~/lib/db";
+import type { Invoice } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
   const invoice = await db.invoices.getById(params.id);

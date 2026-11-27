@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 import { db } from "~/lib/db";
-import type { Quote, Contact, Company } from "~/lib/db";
+import type { Quote } from "~/lib/db";
 
 export async function clientLoader({ params }: { params: { id: string } }) {
   const quote = await db.quotes.getById(params.id);

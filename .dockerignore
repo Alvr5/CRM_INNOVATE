@@ -1,4 +1,11 @@
+.git
 .react-router
+.agents
 build
+dist
+dist-electron
 node_modules
+.env
+.env.*
+!.env.example
 README.md

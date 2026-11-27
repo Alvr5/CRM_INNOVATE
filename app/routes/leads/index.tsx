@@ -1,4 +1,4 @@
-import { useLoaderData, useActionData } from "react-router";
+import { useLoaderData } from "react-router";
 import { db } from "~/lib/db";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -42,37 +42,6 @@ export async function clientAction({ request }: { request: Request }) {
 export default function LeadsIndex() {
   const { leadsByStage, userMap } = useLoaderData<typeof clientLoader>();
   const [showConvertModal, setShowConvertModal] = useState<{ leadId: string; lead: any } | null>(null);
-
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
-
-  const sourceLabels: Record<string, string> = {
-    website: 'Web',
-    referral: 'Referido',
-    social: 'Redes Sociales',
-    email: 'Email',
-    phone: 'Teléfono',
-    event: 'Evento',
-    other: 'Otro',
-  };
-
-  const sourceColors: Record<string, string> = {
-    website: 'bg-blue-100 text-blue-700',
-    referral: 'bg-green-100 text-green-700',
-    social: 'bg-purple-100 text-purple-700',
-    email: 'bg-yellow-100 text-yellow-700',
-    phone: 'bg-orange-100 text-orange-700',
-    event: 'bg-pink-100 text-pink-700',
-    other: 'bg-gray-100 text-gray-700',
-  };
-
-  const statusLabels: Record<string, string> = {
-    new: 'Nuevo',
-    contacted: 'Contactado',
-    qualified: 'Calificado',
-    unqualified: 'No Calificado',
-    converted: 'Convertido',
-    lost: 'Perdido',
-  };
 
   const handleConvert = (lead: any) => {
     setShowConvertModal({ leadId: lead.id, lead });

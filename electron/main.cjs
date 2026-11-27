@@ -21,9 +21,11 @@ const MIME_TYPES = {
 function startServer() {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
-      let filePath = path.join(CLIENT_DIR, req.url === '/' ? 'index.html' : req.url);
+      const pathname = decodeURIComponent((req.url || '/').split('?')[0]);
+      let filePath = path.join(CLIENT_DIR, pathname === '/' ? 'index.html' : pathname);
 
-      if (!filePath.startsWith(CLIENT_DIR)) {
+      const relativePath = path.relative(CLIENT_DIR, filePath);
+      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;

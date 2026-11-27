@@ -9,6 +9,7 @@ import {
 
 import "./app.css";
 import { AuthProvider } from "~/context/AuthContext";
+import { isSupabaseConfigured } from "~/lib/db/client";
 import { DBInitializer } from "./components/DBInitializer";
 
 export const links = () => [
@@ -43,6 +44,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  if (!isSupabaseConfigured) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="max-w-lg w-full bg-white border border-gray-200 rounded-xl p-8 shadow-sm space-y-4">
+          <h1 className="text-xl font-bold text-gray-900">Falta configurar Supabase</h1>
+          <p className="text-sm text-gray-600">
+            La aplicación necesita las credenciales del proyecto. Copia{" "}
+            <code className="bg-gray-100 px-1 rounded">.env.example</code> a{" "}
+            <code className="bg-gray-100 px-1 rounded">.env</code> y completa:
+          </p>
+          <pre className="bg-gray-900 text-gray-100 text-xs rounded-lg p-4 overflow-x-auto">
+{`VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key-publica`}
+          </pre>
+          <p className="text-sm text-gray-600">
+            En producción, define esas mismas variables en el panel del proveedor
+            (Vercel, Docker, etc.) y vuelve a compilar.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <AuthProvider>
       <DBInitializer />

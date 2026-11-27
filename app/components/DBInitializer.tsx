@@ -20,7 +20,7 @@ export async function forceReSeed() {
   window.dispatchEvent(new Event('crm:seed-complete'));
 }
 
-// Make it available globally for debugging
-if (typeof window !== 'undefined') {
+// Solo disponible en desarrollo para evitar borrados accidentales en producción.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as any).forceReSeed = forceReSeed;
 }
