@@ -1,87 +1,90 @@
-# Welcome to React Router!
+# InnovateFlow CRM
 
-A modern, production-ready template for building full-stack React applications using React Router.
+CRM de ventas construido con React Router (SPA), React 19, Tailwind CSS y Supabase.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Requisitos
 
-## Features
+- Node.js 20+ (recomendado 24)
+- Un proyecto de Supabase
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## Configuración
 
-## Getting Started
+1. Instala dependencias:
 
-### Installation
+   ```bash
+   npm install
+   ```
 
-Install the dependencies:
+2. Crea el archivo de entorno:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Completa:
+
+   ```env
+   VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+   VITE_SUPABASE_ANON_KEY=tu-anon-key-publica
+   ```
+
+3. Prepara la base de datos. Ejecuta [`schema-supabase.sql`](schema-supabase.sql) en el
+   SQL Editor de Supabase. Si la base ya existía, ejecuta también la migración de
+   [`supabase/migrations`](supabase/migrations).
+
+4. Arranca en desarrollo:
+
+   ```bash
+   npm run dev
+   ```
+
+## Scripts
+
+| Script | Descripción |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo con HMR |
+| `npm run build` | Valida variables de entorno y genera `build/client` |
+| `npm run start` | Sirve la build estática en `PORT` (por defecto 3000) |
+| `npm run typecheck` | Genera tipos de rutas y ejecuta TypeScript |
+| `npm run electron:dev` | Compila y abre la app de escritorio |
+| `npm run electron:build` | Genera el instalador de Windows |
+
+## Estructura
+
+```
+app/
+  components/      Layout, inicializador de datos e iconos
+  context/         Autenticación y permisos
+  lib/db/          Capa de datos Supabase (tipos, CRUD, auth, seed)
+  routes/          Rutas por módulo (leads, contactos, empresas, ...)
+electron/          Shell de escritorio
+scripts/           Validación de entorno y servidor estático
+supabase/          Migraciones SQL
+schema-supabase.sql Esquema completo idempotente
+```
+
+## Producción
+
+### Vercel
+
+Configura `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en las variables de entorno
+del proyecto. `vercel.json` publica `build/client` como SPA.
+
+### Docker
 
 ```bash
-npm install
+docker build \
+  --build-arg VITE_SUPABASE_URL=https://tu-proyecto.supabase.co \
+  --build-arg VITE_SUPABASE_ANON_KEY=tu-anon-key \
+  -t innovateflow-crm .
+
+docker run -p 3000:3000 innovateflow-crm
 ```
 
-### Development
+## Seguridad
 
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+- Nunca subas `.env` al repositorio (ya está en `.gitignore`).
+- La clave anónima de Supabase es pública; la seguridad real debe aplicarse con RLS
+  y Supabase Auth.
+- Si el repositorio estuvo expuesto con el archivo `.env` antiguo, rota las claves de
+  Supabase y revisa los accesos del proyecto.

@@ -7,28 +7,18 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "build": "node init && react-router build",
-    "dev": "node init && react-router dev",
-    "server": "node server/index.js",
-    "start": "node init && react-router-serve ./build/server/index.js",
+    "dev": "react-router dev",
+    "build": "node scripts/check-env.mjs && react-router build",
+    "start": "node scripts/serve.mjs",
     "typecheck": "react-router typegen && tsc",
-    "electron:dev": "electron .",
-    "electron:build": "electron-builder --win"
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder --win"
   },
   "dependencies": {
-    "@react-router/node": "^8.5.2",
-    "@react-router/serve": "^8.5.2",
     "@supabase/supabase-js": "^2.119.2",
-    "better-sqlite3": "^13.2.0",
-    "cors": "^2.8.6",
-    "dotenv": "^8.2.0",
-    "express": "^5.3.0",
-    "isbot": "^5.1.36",
-    "node-fetch": "^3.3.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router": "^8.5.2",
-    "sql.js": "^1.17.0"
+    "react-router": "^8.5.2"
   },
   "devDependencies": {
     "@react-router/dev": "^8.5.2",
@@ -46,11 +36,12 @@
     "appId": "com.innovateflow.crm",
     "productName": "InnovateFlow CRM",
     "directories": {
-      "output": "C:\\Users\\aleca\\AppData\\Local\\Temp\\kilo\\crm-dist"
+      "output": "dist"
     },
     "files": [
       "build/client/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "package.json"
     ],
     "win": {
       "target": "nsis"
