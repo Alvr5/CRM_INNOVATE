@@ -208,6 +208,13 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ============================================================
+-- Migraciones idempotentes para bases de datos ya existentes
+-- (CREATE TABLE IF NOT EXISTS no agrega columnas nuevas)
+-- ============================================================
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS assignee_id UUID;
+
 -- Enable RLS on all tables (public access for anon key)
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
