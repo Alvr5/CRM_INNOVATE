@@ -43,7 +43,7 @@ CRM de ventas construido con React Router (SPA), React 19, Tailwind CSS y Supaba
 | Script | Descripción |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo con HMR |
-| `npm run build` | Valida variables de entorno y genera `build/client` |
+| `npm run build` | Avisa si faltan variables de entorno y genera `build/client` |
 | `npm run start` | Sirve la build estática en `PORT` (por defecto 3000) |
 | `npm run typecheck` | Genera tipos de rutas y ejecuta TypeScript |
 | `npm run electron:dev` | Compila y abre la app de escritorio |

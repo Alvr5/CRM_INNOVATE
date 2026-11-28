@@ -29,11 +29,13 @@ const anonKey = process.env.VITE_SUPABASE_ANON_KEY || values.VITE_SUPABASE_ANON_
 const isPlaceholder = !url || !anonKey || url.includes("tu-proyecto") || anonKey.includes("tu-anon-key");
 
 if (isPlaceholder) {
-  console.error("\n[build] Falta configurar Supabase.");
-  console.error("        Define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.");
-  console.error("        Local: copia .env.example a .env y completa los valores.");
-  console.error("        CI/Vercel/Docker: configura las variables de entorno del proyecto.\n");
-  process.exit(1);
+  // No abortamos el build: en Vercel/Docker las variables se inyectan en tiempo de
+  // despliegue y un fallo aquí impediría publicar la app. La propia interfaz muestra
+  // una pantalla de configuración cuando no están presentes.
+  console.warn("\n[build] Aviso: Supabase no está configurado.");
+  console.warn("        Define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.");
+  console.warn("        Local: copia .env.example a .env y completa los valores.");
+  console.warn("        CI/Vercel/Docker: configura las variables de entorno del proyecto.\n");
+} else {
+  console.log(`[build] Supabase configurado para ${url}`);
 }
-
-console.log(`[build] Supabase configurado para ${url}`);
